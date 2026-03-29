@@ -1,0 +1,36 @@
+apiVersion: k3d.io/v1alpha5
+kind: Simple
+metadata:
+  name: mgmt
+servers: 1
+agents: 0
+network: k3s-iot
+image: rancher/k3s:v1.29.4-k3s1
+options:
+  k3d:
+    wait: true
+    timeout: "120s"
+  k3s:
+    extraArgs:
+      # SAN so edge Fleet agents can verify TLS by container hostname
+      - arg: "--tls-san=k3d-mgmt-serverlb"
+        nodeFilters: ["server:*"]
+      # Isolated CIDRs — no overlap with edge clusters
+      - arg: "--cluster-cidr=10.10.0.0/16"
+        nodeFilters: ["server:*"]
+      - arg: "--service-cidr=10.11.0.0/16"
+        nodeFilters: ["server:*"]
+      # Disable default traefik (we manage ingress per cluster)
+      - arg: "--disable=traefik"
+        nodeFilters: ["server:*"]
+      # Fleet targeting labels
+      - arg: "--node-label=cluster-role=management"
+        nodeFilters: ["server:*"]
+      - arg: "--node-label=environment=management"
+        nodeFilters: ["server:*"]
+  kubeconfig:
+    updateDefaultKubeconfig: true
+    switchCurrentContext: true
+kubeAPI:
+  host: "0.0.0.0"
+  hostPort: "16443"

@@ -1,0 +1,8 @@
+apiVersion: fleet.cattle.io/v1alpha1
+kind: ClusterRegistrationToken
+metadata:
+  name: edge-token
+  namespace: fleet-default
+spec:
+  # 0h = never expires. Use "24h" in real/production environments.
+  ttl: 0h

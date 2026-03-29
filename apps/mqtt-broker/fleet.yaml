@@ -1,0 +1,44 @@
+defaultNamespace: mqtt-system
+helm:
+  releaseName: emqx
+  chart: emqx
+  repo: https://repos.emqx.io/charts
+  version: "5.6.0"
+  values:
+    replicaCount: 1
+    service:
+      type: ClusterIP
+    emqxConfig:
+      EMQX_LOG__CONSOLE_HANDLER__ENABLE: "true"
+      EMQX_AUTHENTICATION__1__MECHANISM: "password_based"
+      # Disable plain MQTT (1883) — enforce TLS only (8883)
+      # For L0/L1 devices that cannot do TLS, override per-cluster below
+      EMQX_LISTENERS__TCP__DEFAULT__ENABLE: "false"
+      EMQX_LISTENERS__SSL__DEFAULT__ENABLE: "true"
+      EMQX_LISTENERS__SSL__DEFAULT__BIND: "0.0.0.0:8883"
+
+targets:
+  # Pre-production: plain MQTT enabled for lab devices
+  - name: edge-pre
+    clusterSelector:
+      matchLabels:
+        environment: pre
+        fleet-environment: edge
+    helm:
+      values:
+        emqxConfig:
+          EMQX_CLUSTER__NAME: "emqx-pre"
+          # Allow plain MQTT in pre for legacy device testing
+          EMQX_LISTENERS__TCP__DEFAULT__ENABLE: "true"
+
+  # Production: TLS-only, no plain MQTT
+  - name: edge-pro
+    clusterSelector:
+      matchLabels:
+        environment: pro
+        fleet-environment: edge
+    helm:
+      values:
+        emqxConfig:
+          EMQX_CLUSTER__NAME: "emqx-pro"
+          EMQX_LISTENERS__TCP__DEFAULT__ENABLE: "false"

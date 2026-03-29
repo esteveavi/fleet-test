@@ -1,0 +1,32 @@
+apiVersion: k3d.io/v1alpha5
+kind: Simple
+metadata:
+  name: edge-pro
+servers: 1
+agents: 0
+network: k3s-iot
+image: rancher/k3s:v1.29.4-k3s1
+options:
+  k3d:
+    wait: true
+    timeout: "120s"
+  k3s:
+    extraArgs:
+      - arg: "--tls-san=k3d-edge-pro-serverlb"
+        nodeFilters: ["server:*"]
+      - arg: "--cluster-cidr=10.30.0.0/16"
+        nodeFilters: ["server:*"]
+      - arg: "--service-cidr=10.31.0.0/16"
+        nodeFilters: ["server:*"]
+      - arg: "--disable=traefik"
+        nodeFilters: ["server:*"]
+      - arg: "--node-label=cluster-role=edge"
+        nodeFilters: ["server:*"]
+      - arg: "--node-label=environment=pro"
+        nodeFilters: ["server:*"]
+  kubeconfig:
+    updateDefaultKubeconfig: true
+    switchCurrentContext: false
+kubeAPI:
+  host: "0.0.0.0"
+  hostPort: "16445"

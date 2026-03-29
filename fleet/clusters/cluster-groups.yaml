@@ -1,0 +1,10 @@
+---
+apiVersion: fleet.cattle.io/v1alpha1
+kind: ClusterGroup
+metadata:
+  name: edge-clusters
+  namespace: fleet-default
+spec:
+  selector:
+    matchLabels:
+      fleet-environment: edge

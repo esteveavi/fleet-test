@@ -1,0 +1,21 @@
+apiVersion: fleet.cattle.io/v1alpha1
+kind: GitRepo
+metadata:
+  name: iiot-apps
+  namespace: fleet-default
+spec:
+  # !! Replace with your actual Git repository URL
+  repo: https://github.com/<your-org>/k3s-iiot-apps.git
+  branch: main
+  paths:
+    - apps/mqtt-broker
+    - apps/opcua-gateway
+  targets:
+    - name: all-edge
+      clusterSelector:
+        matchLabels:
+          fleet-environment: edge
+  # Fleet polls every 30s for changes
+  pollingInterval: 30s
+  # For private repos, create a secret and reference it here:
+  # clientSecretName: git-credentials
