@@ -5,7 +5,7 @@ metadata:
   namespace: fleet-default
 spec:
   # !! Replace with your actual Git repository URL
-  repo: https://github.com/<your-org>/k3s-iiot-apps.git
+  repo: https://github.com/esteveavi/fleet-test.git
   branch: main
   paths:
     - apps/mqtt-broker

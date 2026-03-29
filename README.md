@@ -130,27 +130,27 @@ and kubeconfig merging work best with Docker.
 ```
 k3s-iiot/
 ├── README.md                    ← this file
+├── setup.sh                     ← setup and automation script
+├── teardown.sh                  ← teardown and cleanup script
+├── edge-values.yaml             ← custom values for edge clusters
+├── mgmt-ca.pem                  ← extracted management CA certificate
 ├── clusters/                    ← k3d cluster config YAML files
 │   ├── mgmt-cluster.yaml
 │   ├── edge-pre-cluster.yaml
 │   └── edge-pro-cluster.yaml
 ├── fleet/                       ← Fleet registration manifests
 │   ├── clusters/
-│   │   ├── edge-pre.yaml
-│   │   └── edge-pro.yaml
+│   │   ├── cluster-groups.yaml
+│   │   └── registration-token.yaml
 │   └── gitrepos/
-│       ├── iiot-apps-pre.yaml
-│       └── iiot-apps-pro.yaml
+│       └── iiot-apps.yaml
 └── apps/                        ← GitOps-managed application manifests
     ├── fleet.yaml               ← Fleet bundle root config
     ├── mqtt-broker/
-    │   ├── fleet.yaml
-    │   ├── namespace.yaml
-    │   └── deployment.yaml
+    │   └── fleet.yaml
     └── opcua-gateway/
-        ├── fleet.yaml
-        ├── namespace.yaml
-        └── deployment.yaml
+        ├── deployment.yaml
+        └── fleet.yaml
 ```
 
 Create the skeleton now:
