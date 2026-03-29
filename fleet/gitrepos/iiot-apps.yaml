@@ -8,8 +8,8 @@ spec:
   repo: https://github.com/esteveavi/fleet-test.git
   branch: main
   paths:
-    - apps/mqtt-broker
-    - apps/opcua-gateway
+    #- apps/mqtt-broker
+    #- apps/opcua-gateway
     - apps/nginx-demo
   targets:
     - name: all-edge

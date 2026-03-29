@@ -199,9 +199,12 @@ including Fleet agents in edge clusters.
 
 ---
 
+> **Note:** The entire initial setup (Steps 1 through 7) is fully automated by the `setup.sh` script included in the repository. You can simply run `./setup.sh` to create the networks, clusters, install Fleet, and register the edge clusters instead of running the commands manually.
+
 ## Step 1 — Create the Shared Docker Network
 
 ```bash
+# The shared Docker network creation is handled automatically by setup.sh. If done manually:
 docker network create \
   --driver bridge \
   --subnet 172.28.0.0/16 \
@@ -224,48 +227,7 @@ docker network inspect k3s-iot | jq '.[0].IPAM.Config'
 ### 2.1 Cluster config file
 
 ```bash
-cat > clusters/mgmt-cluster.yaml << 'EOF'
-apiVersion: k3d.io/v1alpha5
-kind: Simple
-metadata:
-  name: mgmt
-servers: 1
-agents: 0
-network: k3s-iot
-image: rancher/k3s:v1.29.4-k3s1
-options:
-  k3d:
-    wait: true
-    timeout: "120s"
-  k3s:
-    extraArgs:
-      # Give the API server certificate a SAN for the LB container hostname
-      # so edge cluster Fleet agents can verify TLS
-      - arg: "--tls-san=k3d-mgmt-serverlb"
-        nodeFilters: ["server:*"]
-      - arg: "--tls-san=172.28.0.0/16"
-        nodeFilters: ["server:*"]
-      # Separate CIDRs per cluster to avoid routing conflicts
-      - arg: "--cluster-cidr=10.10.0.0/16"
-        nodeFilters: ["server:*"]
-      - arg: "--service-cidr=10.11.0.0/16"
-        nodeFilters: ["server:*"]
-      # Disable default traefik — we manage ingress ourselves
-      - arg: "--disable=traefik"
-        nodeFilters: ["server:*"]
-      # Enable cluster labels for Fleet targeting
-      - arg: "--node-label=cluster-role=management"
-        nodeFilters: ["server:*"]
-      - arg: "--node-label=environment=management"
-        nodeFilters: ["server:*"]
-  kubeconfig:
-    updateDefaultKubeconfig: true
-    switchCurrentContext: true
-ports:
-  # Expose API server on host for kubectl
-  - port: "6443:6443"
-    nodeFilters: ["loadbalancer"]
-EOF
+# The cluster configuration is already provided in the clusters/mgmt-cluster.yaml file.
 ```
 
 ### 2.2 Create the cluster
@@ -312,41 +274,7 @@ Save it — you'll need it when registering edge clusters.
 ### 3.1 Cluster config file
 
 ```bash
-cat > clusters/edge-pre-cluster.yaml << 'EOF'
-apiVersion: k3d.io/v1alpha5
-kind: Simple
-metadata:
-  name: edge-pre
-servers: 1
-agents: 0
-network: k3s-iot
-image: rancher/k3s:v1.29.4-k3s1
-options:
-  k3d:
-    wait: true
-    timeout: "120s"
-  k3s:
-    extraArgs:
-      - arg: "--tls-san=k3d-edge-pre-serverlb"
-        nodeFilters: ["server:*"]
-      - arg: "--cluster-cidr=10.20.0.0/16"
-        nodeFilters: ["server:*"]
-      - arg: "--service-cidr=10.21.0.0/16"
-        nodeFilters: ["server:*"]
-      - arg: "--disable=traefik"
-        nodeFilters: ["server:*"]
-      # Fleet uses these labels for bundle targeting
-      - arg: "--node-label=cluster-role=edge"
-        nodeFilters: ["server:*"]
-      - arg: "--node-label=environment=pre"
-        nodeFilters: ["server:*"]
-  kubeconfig:
-    updateDefaultKubeconfig: true
-    switchCurrentContext: false   # keep mgmt as default
-ports:
-  - port: "6444:6443"
-    nodeFilters: ["loadbalancer"]
-EOF
+# The cluster configuration is already provided in the clusters/edge-pre-cluster.yaml file.
 ```
 
 ### 3.2 Create the cluster
@@ -373,40 +301,7 @@ kubectl config use-context k3d-mgmt
 ### 4.1 Cluster config file
 
 ```bash
-cat > clusters/edge-pro-cluster.yaml << 'EOF'
-apiVersion: k3d.io/v1alpha5
-kind: Simple
-metadata:
-  name: edge-pro
-servers: 1
-agents: 0
-network: k3s-iot
-image: rancher/k3s:v1.29.4-k3s1
-options:
-  k3d:
-    wait: true
-    timeout: "120s"
-  k3s:
-    extraArgs:
-      - arg: "--tls-san=k3d-edge-pro-serverlb"
-        nodeFilters: ["server:*"]
-      - arg: "--cluster-cidr=10.30.0.0/16"
-        nodeFilters: ["server:*"]
-      - arg: "--service-cidr=10.31.0.0/16"
-        nodeFilters: ["server:*"]
-      - arg: "--disable=traefik"
-        nodeFilters: ["server:*"]
-      - arg: "--node-label=cluster-role=edge"
-        nodeFilters: ["server:*"]
-      - arg: "--node-label=environment=pro"
-        nodeFilters: ["server:*"]
-  kubeconfig:
-    updateDefaultKubeconfig: true
-    switchCurrentContext: false
-ports:
-  - port: "6445:6443"
-    nodeFilters: ["loadbalancer"]
-EOF
+# The cluster configuration is already provided in the clusters/edge-pro-cluster.yaml file.
 ```
 
 ### 4.2 Create the cluster
@@ -564,35 +459,14 @@ management API and pulls bundle updates.
 ### 7.1 Create a ClusterGroup and registration tokens
 
 ```bash
-# ── ClusterGroup: all-edge ──────────────────────────────────────────────────
-cat > fleet/clusters/cluster-groups.yaml << 'EOF'
-apiVersion: fleet.cattle.io/v1alpha1
-kind: ClusterGroup
-metadata:
-  name: edge-clusters
-  namespace: fleet-default
-spec:
-  selector:
-    matchLabels:
-      fleet-environment: edge
-EOF
-
+# The ClusterGroup is defined in fleet/clusters/cluster-groups.yaml.
 kubectl apply -f fleet/clusters/cluster-groups.yaml
 ```
 
 ### 7.2 Create registration token
 
 ```bash
-cat > fleet/clusters/registration-token.yaml << 'EOF'
-apiVersion: fleet.cattle.io/v1alpha1
-kind: ClusterRegistrationToken
-metadata:
-  name: edge-token
-  namespace: fleet-default
-spec:
-  ttl: 0h   # 0 = never expires; use "24h" in real environments
-EOF
-
+# The token is defined in fleet/clusters/registration-token.yaml.
 kubectl apply -f fleet/clusters/registration-token.yaml
 
 # Wait a moment then retrieve the token value
@@ -680,137 +554,19 @@ label selectors. Push the `apps/` folder to your Git host.
 ### 8.1 Root fleet.yaml (targets all edge bundles)
 
 ```bash
-cat > apps/fleet.yaml << 'EOF'
-# Root bundle — Fleet reads this to discover sub-bundles.
-# Each sub-directory with its own fleet.yaml is a separate bundle.
-defaultNamespace: iiot-workloads
-EOF
+# The root bundle configuration is located in apps/fleet.yaml.
 ```
 
 ### 8.2 MQTT Broker bundle
 
 ```bash
-# fleet.yaml — bundle-level targeting
-cat > apps/mqtt-broker/fleet.yaml << 'EOF'
-defaultNamespace: mqtt-system
-helm:
-  releaseName: emqx
-  chart: emqx
-  repo: https://repos.emqx.io/charts
-  version: "5.6.0"
-  values:
-    replicaCount: 1
-    service:
-      type: ClusterIP
-    emqxConfig:
-      EMQX_LOG__CONSOLE_HANDLER__ENABLE: "true"
-      EMQX_AUTHENTICATION__1__MECHANISM: "password_based"
-
-# Target: both edge clusters
-targets:
-  - name: edge-pre
-    clusterSelector:
-      matchLabels:
-        environment: pre
-        fleet-environment: edge
-    helm:
-      values:
-        emqxConfig:
-          EMQX_NODE__NAME: "emqx@emqx-pre.mqtt-system.svc.cluster.local"
-  - name: edge-pro
-    clusterSelector:
-      matchLabels:
-        environment: pro
-        fleet-environment: edge
-    helm:
-      values:
-        emqxConfig:
-          EMQX_NODE__NAME: "emqx@emqx-pro.mqtt-system.svc.cluster.local"
-EOF
+# The bundle configuration is located in apps/mqtt-broker/fleet.yaml.
 ```
 
 ### 8.3 OPC-UA Gateway bundle
 
 ```bash
-cat > apps/opcua-gateway/namespace.yaml << 'EOF'
-apiVersion: v1
-kind: Namespace
-metadata:
-  name: opcua-system
-  labels:
-    app.kubernetes.io/managed-by: fleet
-EOF
-
-cat > apps/opcua-gateway/deployment.yaml << 'EOF'
-apiVersion: apps/v1
-kind: Deployment
-metadata:
-  name: opcua-gateway
-  namespace: opcua-system
-  labels:
-    app: opcua-gateway
-spec:
-  replicas: 1
-  selector:
-    matchLabels:
-      app: opcua-gateway
-  template:
-    metadata:
-      labels:
-        app: opcua-gateway
-    spec:
-      containers:
-        - name: gateway
-          image: ghcr.io/node-opcua/node-opcua-sample-server:latest
-          ports:
-            - name: opcua
-              containerPort: 4840    # OPC-UA default port
-              protocol: TCP
-          env:
-            - name: OPCUA_PORT
-              value: "4840"
-          resources:
-            requests:
-              cpu: "50m"
-              memory: "64Mi"
-            limits:
-              cpu: "200m"
-              memory: "256Mi"
----
-apiVersion: v1
-kind: Service
-metadata:
-  name: opcua-gateway
-  namespace: opcua-system
-spec:
-  selector:
-    app: opcua-gateway
-  ports:
-    - name: opcua
-      port: 4840
-      targetPort: 4840
-  type: ClusterIP
-EOF
-
-cat > apps/opcua-gateway/fleet.yaml << 'EOF'
-defaultNamespace: opcua-system
-# Deploy to ALL edge clusters
-targets:
-  - name: all-edge
-    clusterSelector:
-      matchLabels:
-        fleet-environment: edge
-    # Environment-specific overrides via kustomize patches
-    kustomize:
-      patches:
-        - patch: |-
-            - op: replace
-              path: /spec/template/spec/containers/0/env/0/value
-              value: "4840"
-          target:
-            kind: Deployment
-            name: opcua-gateway
-EOF
+# The Kubernetes manifests and Fleet configuration are located in apps/opcua-gateway/.
 ```
 
 ### 8.4 Custom Local Helm Charts (e.g., NGINX Demo)
@@ -850,31 +606,7 @@ git push -u origin main
 ```bash
 kubectl config use-context k3d-mgmt
 
-cat > fleet/gitrepos/iiot-apps.yaml << 'EOF'
-apiVersion: fleet.cattle.io/v1alpha1
-kind: GitRepo
-metadata:
-  name: iiot-apps
-  namespace: fleet-default
-spec:
-  repo: https://github.com/<your-org>/k3s-iiot-apps.git
-  branch: main
-  # Path inside the repo where Fleet bundles live
-  paths:
-    - apps/mqtt-broker
-    - apps/opcua-gateway
-  # Deploy to all registered edge clusters
-  targets:
-    - name: all-edge
-      clusterSelector:
-        matchLabels:
-          fleet-environment: edge
-  # Poll interval
-  pollingInterval: 30s
-  # For private repos add a secret:
-  # clientSecretName: git-credentials
-EOF
-
+# The GitRepo resource is defined in fleet/gitrepos/iiot-apps.yaml.
 kubectl apply -f fleet/gitrepos/iiot-apps.yaml
 ```
 
