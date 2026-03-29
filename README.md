@@ -813,7 +813,22 @@ targets:
 EOF
 ```
 
-### 8.4 Push to Git
+### 8.4 Custom Local Helm Charts (e.g., NGINX Demo)
+
+In addition to using external charts (like `emqx`) or raw Kubernetes YAML (like `opcua-gateway`), you can use **Helm** to build fully customizable local applications.
+
+#### What is Helm?
+Helm is often called the "package manager for Kubernetes". Instead of writing static, hardcoded YAML files for every environment, Helm allows you to use Go-lang based variables (like `{{ .Values.imageTag }}`) to dynamically generate the YAML before it is deployed to the cluster.
+
+If you look at the `apps/nginx-demo` folder:
+- **`Chart.yaml`**: This explicitly tells Fleet and Helm that the directory is a Helm chart. It contains metadata like the application name and chart version.
+- **`templates/` directory**: This folder is the core of Helm. It contains the actual Kubernetes YAML files (like `deployment.yaml` and `service.yaml`), but with placeholder variables instead of hard-coded values.
+- **`values.yaml`**: This provides the default fallback values for any variables used in your templates.
+
+#### How Fleet uses it:
+When Fleet deploys the `nginx-demo` directory, it sees `Chart.yaml` and knows it must run the Helm templating engine. The `targetCustomizations` defined in `fleet.yaml` tell Fleet exactly which variables to inject. For example, it injects `values-pre.yaml` for the edge-pre cluster, dynamically replacing `{{ .Values.imageTag }}` with the pre-production version. This allows you to manage multiple environments cleanly without duplicating YAML files!
+
+### 8.5 Push to Git
 
 ```bash
 cd k3s-iiot

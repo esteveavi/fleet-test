@@ -1,6 +1,6 @@
 defaultNamespace: opcua-system
 
-targets:
+targetCustomizations:
   - name: edge-pre
     clusterSelector:
       matchLabels:

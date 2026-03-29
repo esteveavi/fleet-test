@@ -10,6 +10,7 @@ spec:
   paths:
     - apps/mqtt-broker
     - apps/opcua-gateway
+    - apps/nginx-demo
   targets:
     - name: all-edge
       clusterSelector:

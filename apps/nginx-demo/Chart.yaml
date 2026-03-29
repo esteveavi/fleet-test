@@ -1,0 +1,4 @@
+apiVersion: v2
+name: nginx-demo
+version: 1.0.0
+description: A demo NGINX server to showcase multi-environment releases.

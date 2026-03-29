@@ -17,7 +17,7 @@ helm:
       EMQX_LISTENERS__SSL__DEFAULT__ENABLE: "true"
       EMQX_LISTENERS__SSL__DEFAULT__BIND: "0.0.0.0:8883"
 
-targets:
+targetCustomizations:
   # Pre-production: plain MQTT enabled for lab devices
   - name: edge-pre
     clusterSelector:
@@ -25,11 +25,8 @@ targets:
         environment: pre
         fleet-environment: edge
     helm:
-      values:
-        emqxConfig:
-          EMQX_CLUSTER__NAME: "emqx-pre"
-          # Allow plain MQTT in pre for legacy device testing
-          EMQX_LISTENERS__TCP__DEFAULT__ENABLE: "true"
+      valuesFiles:
+        - values-pre.yaml
 
   # Production: TLS-only, no plain MQTT
   - name: edge-pro
@@ -38,7 +35,5 @@ targets:
         environment: pro
         fleet-environment: edge
     helm:
-      values:
-        emqxConfig:
-          EMQX_CLUSTER__NAME: "emqx-pro"
-          EMQX_LISTENERS__TCP__DEFAULT__ENABLE: "false"
+      valuesFiles:
+        - values-pro.yaml

@@ -1,0 +1,3 @@
+emqxConfig:
+  EMQX_CLUSTER__NAME: "emqx-pro"
+  EMQX_LISTENERS__TCP__DEFAULT__ENABLE: "false"
